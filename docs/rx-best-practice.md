@@ -5,7 +5,7 @@ RX Software Development Best Practice
 Version: 1.0
 Date: 2026-09-08
 
-https://raw.githubusercontent.com/gorhas/best-practice/main/docs/rx-best-practice.md
+https://raw.githubusercontent.com/gor-has/best-practice/main/docs/rx-best-practice.md
 
 Treat that document as normative.
 
