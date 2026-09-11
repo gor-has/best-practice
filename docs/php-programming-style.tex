@@ -1,0 +1,576 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{rx-programming-style}
+
+\begin{document}
+
+\rxmaketitle{RX PHP Programming Style}
+\rxdocumentmeta{PHP source code in RX/Raditex web applications and libraries}{1.0}{11 September 2026}
+
+\tableofcontents
+\clearpage
+
+\section{1. Purpose}\label{1-purpose}
+
+This document defines the PHP programming style used in RX projects.
+
+The goals are readable code, predictable structure, explicit behaviour,
+maintainability over cleverness, separation of responsibilities, safe
+database and web programming, and consistency between projects.
+
+The words \textbf{shall}, \textbf{should}, and \textbf{may} mean
+required, strongly recommended, and optional respectively.
+
+\section{2. Core principles}\label{2-core-principles}
+
+\subsection{2.1 Clarity before brevity}\label{21-clarity-before-brevity}
+
+Code shall be written for the programmer who must read and maintain it
+later. Do not reduce line count merely to make code shorter.
+
+Avoid compressed code:
+
+\begin{lstlisting}[language=PHP]
+if ($active) $value = $condition ? $first : $second;
+\end{lstlisting}
+
+Prefer explicit control flow:
+
+\begin{lstlisting}[language=PHP]
+if ($active)
+{
+    if ($condition)
+    {
+        $value = $first_value;
+    }
+    else
+    {
+        $value = $second_value;
+    }
+}
+\end{lstlisting}
+
+\subsection{2.2 One primary
+responsibility}\label{22-one-primary-responsibility}
+
+A class, function, or file should have one clear primary responsibility.
+
+Typical RX separation:
+
+\begin{lstlisting}
+public page
+    request handling and page composition
+
+list class
+    list query and list rendering
+
+record class
+    fetch/insert/update of one database record
+
+form class
+    form construction
+
+generic widget
+    reusable presentation logic
+\end{lstlisting}
+
+\subsection{2.3 Prefer composition}\label{23-prefer-composition}
+
+In OO PHP, composition should normally be preferred to deep inheritance.
+Inheritance is appropriate only when the relationship is natural and
+remains easy to understand.
+
+\subsection{2.4 Avoid speculative
+abstraction}\label{24-avoid-speculative-abstraction}
+
+Do not create a generic builder, metadata engine, factory hierarchy, or
+base class merely to eliminate a few repeated lines. Small explicit
+duplication is preferable to an abstraction that hides business
+behaviour.
+
+\section{3. Files and filenames}\label{3-files-and-filenames}
+
+Filesystem names shall use lowercase words separated by hyphens.
+
+Correct:
+
+\begin{lstlisting}
+rx-page.php
+page-footer.php
+page-footer-panel.php
+inventory-item-record.php
+inventory-item-edit-form.php
+\end{lstlisting}
+
+Avoid:
+
+\begin{lstlisting}
+rx_page.php
+PageFooter.php
+inventoryItemRecord.php
+\end{lstlisting}
+
+A PHP file should normally define one major reusable class.
+
+Use paths relative to the current file:
+
+\begin{lstlisting}[language=PHP]
+require_once(__DIR__ . '/rx-widget.php');
+\end{lstlisting}
+
+Do not depend on the process working directory.
+
+\section{4. PHP identifiers}\label{4-php-identifiers}
+
+PHP identifiers shall use lowercase words separated by underscores.
+
+Correct:
+
+\begin{lstlisting}[language=PHP]
+class page_footer
+class inventory_item_record
+
+function rx_html_escape(...)
+function fetch_database_record(...)
+
+$database_connection
+$device_uuid
+$submitted_values
+$number_of_rows
+\end{lstlisting}
+
+Avoid camelCase:
+
+\begin{lstlisting}[language=PHP]
+class PageFooter
+$databaseConnection
+$deviceUuid
+$numberOfRows
+\end{lstlisting}
+
+Names shall describe purpose. Avoid \passthrough{\lstinline!$d!},
+\passthrough{\lstinline!$r!}, \passthrough{\lstinline!$q!},
+\passthrough{\lstinline!$c!}, \passthrough{\lstinline!$x!},
+\passthrough{\lstinline!$tmp!}, and similar abbreviations merely to save
+typing.
+
+Prefer:
+
+\begin{lstlisting}[language=PHP]
+$device_record
+$database_result
+$query_string
+$database_connection
+$temporary_filename
+$object_definition
+\end{lstlisting}
+
+This rule also applies to loop variables:
+
+\begin{lstlisting}[language=PHP]
+foreach ($object_definitions as $object_definition)
+{
+    ...
+}
+\end{lstlisting}
+
+Short established technical names such as
+\passthrough{\lstinline!$sql!}, \passthrough{\lstinline!$html!},
+\passthrough{\lstinline!$uuid!}, and \passthrough{\lstinline!$url!} are
+acceptable when unambiguous.
+
+Constants shall use uppercase underscore style:
+
+\begin{lstlisting}[language=PHP]
+const DEFAULT_PAGE_SIZE = 100;
+const MAXIMUM_PAGE_SIZE = 500;
+\end{lstlisting}
+
+\section{5. Formatting and braces}\label{5-formatting-and-braces}
+
+RX PHP uses an Ellemtel/Allman-like brace style.
+
+\begin{lstlisting}[language=PHP]
+if ($record === null)
+{
+    return null;
+}
+\end{lstlisting}
+
+Functions:
+
+\begin{lstlisting}[language=PHP]
+function rx_html_escape(mixed $value): string
+{
+    return htmlspecialchars(
+        (string)$value,
+        ENT_QUOTES | ENT_SUBSTITUTE,
+        'UTF-8'
+    );
+}
+\end{lstlisting}
+
+Classes:
+
+\begin{lstlisting}[language=PHP]
+class page_footer implements rx_widget
+{
+    private page_footer_panel $left_content;
+
+    public function render(): string
+    {
+        ...
+    }
+}
+\end{lstlisting}
+
+Do not write:
+
+\begin{lstlisting}[language=PHP]
+if ($value === '') return;
+\end{lstlisting}
+
+Use:
+
+\begin{lstlisting}[language=PHP]
+if ($value === '')
+{
+    return;
+}
+\end{lstlisting}
+
+Use four spaces per indentation level. Do not use tabs for source
+indentation.
+
+Break long calls and conditions over several lines. Use blank lines to
+separate logical groups.
+
+\section{6. Types}\label{6-types}
+
+New standalone PHP modules should normally use:
+
+\begin{lstlisting}[language=PHP]
+<?php
+
+declare(strict_types=1);
+\end{lstlisting}
+
+Existing projects may introduce strict types incrementally where
+compatibility permits.
+
+Functions and methods should use explicit parameter and return types
+whenever practical:
+
+\begin{lstlisting}[language=PHP]
+public function fetch(
+    string $device_uuid
+): ?array
+{
+    ...
+}
+\end{lstlisting}
+
+Nullability shall be explicit. Do not use empty string, zero, and
+\passthrough{\lstinline!null!} interchangeably when they represent
+different states.
+
+\section{7. Object-oriented PHP}\label{7-object-oriented-php}
+
+Create a class because it represents a coherent responsibility, not
+merely because PHP supports classes.
+
+Use the narrowest appropriate visibility. Do not make members public
+merely for convenience.
+
+Use interfaces when several implementations genuinely share a contract:
+
+\begin{lstlisting}[language=PHP]
+interface rx_widget
+{
+    public function render(): string;
+}
+\end{lstlisting}
+
+Keep inheritance shallow. Prefer object composition and delegation.
+
+Constructors should establish a valid object state. Avoid surprising
+external side effects in constructors when a named method would make the
+operation clearer.
+
+\section{8. Functions and methods}\label{8-functions-and-methods}
+
+Function names shall describe the operation.
+
+Avoid:
+
+\begin{lstlisting}[language=PHP]
+h()
+q()
+do_it()
+proc()
+\end{lstlisting}
+
+Prefer:
+
+\begin{lstlisting}[language=PHP]
+rx_html_escape()
+build_query_string()
+fetch_device_record()
+validate_submitted_values()
+\end{lstlisting}
+
+A function should normally perform one logical operation.
+
+Early returns are acceptable when they simplify validation and reduce
+nesting.
+
+Boolean functions should read naturally:
+
+\begin{lstlisting}[language=PHP]
+is_valid_uuid()
+has_permission()
+record_exists()
+\end{lstlisting}
+
+\section{9. Arrays}\label{9-arrays}
+
+Use arrays where they naturally represent collections or simple
+structured data.
+
+Do not replace every explicit class with a large undocumented
+associative array.
+
+Prefer descriptive keys:
+
+\begin{lstlisting}[language=PHP]
+$submitted_values = [
+    'name' => $name,
+    'status' => $status,
+    'device_uuid' => $device_uuid
+];
+\end{lstlisting}
+
+\section{10. Database programming}\label{10-database-programming}
+
+Database connection creation shall be centralized.
+
+Data values shall be passed as parameters:
+
+\begin{lstlisting}[language=PHP]
+$database_result = pg_query_params(
+    $database_connection,
+    $select_sql,
+    [$device_uuid]
+);
+\end{lstlisting}
+
+Never concatenate request values into SQL.
+
+When dynamic schema, table, or column names are genuinely required they
+shall be validated and escaped with the proper PostgreSQL identifier
+mechanism.
+
+Long SQL shall be formatted for readability:
+
+\begin{lstlisting}[language=PHP]
+$select_sql = "
+    SELECT
+        device_uuid,
+        name,
+        status
+    FROM
+        rscada.device
+    WHERE
+        device_uuid = $1::uuid
+";
+\end{lstlisting}
+
+Single-record database operations should normally live in record
+classes. Public page files shall not contain large
+\passthrough{\lstinline!SELECT!}, \passthrough{\lstinline!INSERT!}, or
+\passthrough{\lstinline!UPDATE!} statements.
+
+\section{11. Web input and output}\label{11-web-input-and-output}
+
+Treat \passthrough{\lstinline!$\_GET!},
+\passthrough{\lstinline!$\_POST!}, cookies, headers, and uploaded files
+as untrusted input and validate them before use.
+
+Dynamic text inserted into HTML shall be escaped using the equivalent
+of:
+
+\begin{lstlisting}[language=PHP]
+htmlspecialchars(
+    $value,
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+);
+\end{lstlisting}
+
+Use a descriptive project helper such as
+\passthrough{\lstinline!rx\_html\_escape()!} when appropriate.
+
+Use \passthrough{\lstinline!http\_build\_query()!} for query strings.
+
+Successful form updates should normally use Post/Redirect/Get.
+
+Passwords, database passwords, API keys, and similar secrets shall not
+be hard-coded in application source.
+
+\section{12. Errors and exceptions}\label{12-errors-and-exceptions}
+
+Errors shall not be silently ignored.
+
+Exceptions are appropriate for invalid application configuration,
+required service failures, or impossible internal states.
+
+Expected user validation failures should normally be handled as
+validation results rather than exceptions.
+
+User-visible errors shall not expose credentials or unnecessary internal
+details.
+
+\section{13. Comments and
+documentation}\label{13-comments-and-documentation}
+
+Comments should explain why, assumptions, protocol requirements, or
+non-obvious constraints.
+
+Poor:
+
+\begin{lstlisting}[language=PHP]
+// Increment counter
+$counter++;
+\end{lstlisting}
+
+Useful:
+
+\begin{lstlisting}[language=PHP]
+// Increment the generation when the hardware counter wraps so the
+// complete sample identity remains monotonic.
+$counter_generation++;
+\end{lstlisting}
+
+Public reusable classes and non-obvious interfaces should have concise
+documentation.
+
+\section{14. Security}\label{14-security}
+
+At minimum:
+
+\begin{itemize}
+\tightlist
+\item
+  validate external input;
+\item
+  escape HTML output;
+\item
+  parameterize SQL values;
+\item
+  restrict file paths;
+\item
+  do not trust client-supplied roles or UUIDs;
+\item
+  perform authorization server-side;
+\item
+  keep secrets out of source code;
+\item
+  avoid production stack traces;
+\item
+  use secure session handling.
+\end{itemize}
+
+\section{15. Performance}\label{15-performance}
+
+Do not optimize without evidence.
+
+When performance matters:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  measure;
+\item
+  identify the actual bottleneck;
+\item
+  optimize that bottleneck;
+\item
+  measure again;
+\item
+  document any less-obvious implementation introduced for performance.
+\end{enumerate}
+
+\section{16. Example}\label{16-example}
+
+\begin{lstlisting}[language=PHP]
+<?php
+
+declare(strict_types=1);
+
+require_once(__DIR__ . '/rx-widget.php');
+
+class text_widget implements rx_widget
+{
+    private string $text;
+
+    public function __construct(string $text)
+    {
+        $this->text = $text;
+    }
+
+    public function render(): string
+    {
+        return htmlspecialchars(
+            $this->text,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        );
+    }
+}
+\end{lstlisting}
+
+\section{17. Review checklist}\label{17-review-checklist}
+
+Before committing PHP code, check:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Filenames are lowercase with hyphens.
+\item
+  PHP identifiers are lowercase with underscores.
+\item
+  Names are descriptive and single-letter abbreviations are avoided.
+\item
+  Braces and four-space indentation are consistent.
+\item
+  Each class/function has one coherent responsibility.
+\item
+  Composition is preferred over unnecessary inheritance.
+\item
+  External input is validated.
+\item
+  HTML output is escaped.
+\item
+  SQL data values are parameterized.
+\item
+  Database operations are in the proper layer.
+\item
+  Errors are handled explicitly.
+\item
+  Secrets are outside source code.
+\item
+  The code is clearer than the abstraction it replaces.
+\end{enumerate}
+
+\section{18. Core rule}\label{18-core-rule}
+
+\begin{quote}
+Make responsibilities, data flow, and control flow visible.
+\end{quote}
+
+Readable explicit code is preferred to clever compact code.
+
+
+\end{document}
