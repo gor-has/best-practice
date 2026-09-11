@@ -881,8 +881,9 @@ constraints, or non-obvious lifetime assumptions.
 
 For public functions, ownership documentation is part of the API.
 
-Comments shoule be done with // and not /* ... */.
-
+Comments shall normally use //, with one // on each commented line.
+/* ... */ shall normally not be used. Larger comment blocks may be
+delimited by lines consisting of // followed by 70 hyphens.
 
 Example:
 
@@ -960,14 +961,14 @@ rx_message_free(rx_message_t *message)
 }
 \end{lstlisting}
 
-Singel line comment is like
+Single line comment is like
 
 \begin{lstlisting}[language=C]
 free(message->data); // Free memory
 \end{lstlisting}
 
 
-And for start of lager block there should be 70 hypens like
+And for start of larger block there should be 70 hyphens like
 
 \begin{lstlisting}[language=C]
 //----------------------------------------------------------------------
