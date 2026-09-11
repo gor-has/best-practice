@@ -1,0 +1,1036 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{rx-programming-style}
+
+\begin{document}
+
+\rxmaketitle{RX C Programming Style}
+\rxdocumentmeta{C source code in RX/Raditex applications, libraries, services, embedded software, and utilities}{1.0}{11 September 2026}
+
+\tableofcontents
+\clearpage
+
+\section{1. Purpose}\label{1-purpose}
+
+This document defines the C programming style used in RX projects.
+
+It deliberately shares many rules with the RX PHP style:
+
+\begin{itemize}
+\tightlist
+\item
+  clarity before brevity;
+\item
+  lowercase underscore identifiers;
+\item
+  descriptive names;
+\item
+  Ellemtel/Allman-like braces;
+\item
+  explicit control flow;
+\item
+  one clear responsibility per module or function;
+\item
+  no premature abstraction or optimization.
+\end{itemize}
+
+C differs from PHP in one especially important area:
+
+\begin{quote}
+Resource ownership and lifetime shall be explicit.
+\end{quote}
+
+In C, memory, file descriptors, sockets, library objects, database
+results, threads, mutexes, and other resources frequently require
+explicit release. Correct cleanup is therefore part of the program
+design, not an afterthought.
+
+The words \textbf{shall}, \textbf{should}, and \textbf{may} mean
+required, strongly recommended, and optional respectively.
+
+\section{2. Language level}\label{2-language-level}
+
+Portable project code should normally target C11 or a later explicitly
+selected C standard.
+
+Example:
+
+\begin{lstlisting}[language=make]
+CFLAGS += -std=c11
+\end{lstlisting}
+
+When GNU extensions are intentionally required:
+
+\begin{lstlisting}[language=make]
+CFLAGS += -std=gnu11
+\end{lstlisting}
+
+GNU extensions shall not be introduced accidentally.
+
+\section{3. Core principles}\label{3-core-principles}
+
+\subsection{3.1 Clarity before brevity}\label{31-clarity-before-brevity}
+
+Do not compress control flow merely to save lines.
+
+Avoid:
+
+\begin{lstlisting}[language=C]
+if (record == NULL) return -1;
+\end{lstlisting}
+
+Prefer:
+
+\begin{lstlisting}[language=C]
+if (record == NULL)
+{
+    return -1;
+}
+\end{lstlisting}
+
+\subsection{3.2 Explicit state and
+ownership}\label{32-explicit-state-and-ownership}
+
+A reader should be able to determine:
+
+\begin{itemize}
+\tightlist
+\item
+  who created an object;
+\item
+  who owns it;
+\item
+  how long it remains valid;
+\item
+  who releases it;
+\item
+  which function releases it;
+\item
+  whether a pointer is borrowed or transferred.
+\end{itemize}
+
+\subsection{3.3 One responsibility per
+module}\label{33-one-responsibility-per-module}
+
+A source/header pair should represent one coherent module.
+
+Example:
+
+\begin{lstlisting}
+rx-canopen-client.c
+rx-canopen-client.h
+
+rx-mqtt-client.c
+rx-mqtt-client.h
+
+rx-device-record.c
+rx-device-record.h
+\end{lstlisting}
+
+\subsection{3.4 Prefer simple control
+flow}\label{34-prefer-simple-control-flow}
+
+Straight-line code with explicit tests is normally preferred to clever
+expressions. This is especially important around cleanup and error
+paths.
+
+\section{4. Files and headers}\label{4-files-and-headers}
+
+Filesystem names shall use lowercase words separated by hyphens.
+
+Correct:
+
+\begin{lstlisting}
+rx-canopen-client.c
+rx-canopen-client.h
+rx-db-support.c
+rx-db-support.h
+\end{lstlisting}
+
+Source and header basenames should match.
+
+Public declarations belong in header files. Implementation details
+should remain in \passthrough{\lstinline!.c!} files whenever possible.
+
+Use uppercase underscore-style include guards:
+
+\begin{lstlisting}[language=C]
+#ifndef RX_CANOPEN_CLIENT_H
+#define RX_CANOPEN_CLIENT_H
+
+...
+
+#endif
+\end{lstlisting}
+
+A \passthrough{\lstinline!.c!} file should normally include:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  its own header;
+\item
+  standard C headers;
+\item
+  system/third-party headers;
+\item
+  project headers.
+\end{enumerate}
+
+Example:
+
+\begin{lstlisting}[language=C]
+#include "rx-canopen-client.h"
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <glib.h>
+
+#include "rx-log.h"
+\end{lstlisting}
+
+\section{5. Identifiers}\label{5-identifiers}
+
+Functions and variables shall use lowercase words separated by
+underscores.
+
+Correct:
+
+\begin{lstlisting}[language=C]
+rx_canopen_client_open()
+rx_canopen_client_close()
+
+database_connection
+message_length
+device_uuid
+sample_count
+\end{lstlisting}
+
+Avoid camelCase.
+
+Public functions shall normally carry a project/module prefix:
+
+\begin{lstlisting}[language=C]
+rx_canopen_open()
+rx_canopen_send_sdo()
+rx_canopen_close()
+\end{lstlisting}
+
+Names shall be descriptive. Single-letter names shall not be used merely
+for brevity.
+
+Prefer:
+
+\begin{lstlisting}[language=C]
+for (sample_index = 0;
+     sample_index < number_of_samples;
+     sample_index++)
+{
+    ...
+}
+\end{lstlisting}
+
+instead of:
+
+\begin{lstlisting}[language=C]
+for (i = 0; i < n; i++)
+{
+    ...
+}
+\end{lstlisting}
+
+Established mathematical notation may be used only when the domain
+meaning is clear and the short name genuinely improves readability.
+
+Project type names should use lowercase underscore style, commonly with
+a \passthrough{\lstinline!\_t!} suffix where appropriate:
+
+\begin{lstlisting}[language=C]
+typedef struct rx_canopen_client rx_canopen_client_t;
+\end{lstlisting}
+
+Do not hide pointer semantics behind typedefs such as:
+
+\begin{lstlisting}[language=C]
+typedef char * string;
+\end{lstlisting}
+
+Macros and compile-time constants shall use uppercase underscore style:
+
+\begin{lstlisting}[language=C]
+#define RX_CANOPEN_MAX_NODES 127
+#define RX_DEFAULT_TIMEOUT_MS 1000
+\end{lstlisting}
+
+\section{6. Formatting and braces}\label{6-formatting-and-braces}
+
+RX C uses an Ellemtel/Allman-like style.
+
+Functions:
+
+\begin{lstlisting}[language=C]
+int
+rx_device_open(const char *device_name)
+{
+    ...
+}
+\end{lstlisting}
+
+Control statements:
+
+\begin{lstlisting}[language=C]
+if (connection == NULL)
+{
+    return -1;
+}
+else
+{
+    ...
+}
+\end{lstlisting}
+
+Loops:
+
+\begin{lstlisting}[language=C]
+for (sample_index = 0;
+     sample_index < number_of_samples;
+     sample_index++)
+{
+    process_sample(samples[sample_index]);
+}
+\end{lstlisting}
+
+Use four spaces for indentation. Do not use tabs.
+
+Write the pointer marker next to the variable:
+
+\begin{lstlisting}[language=C]
+char *buffer;
+const char *device_name;
+rx_device_t *device;
+\end{lstlisting}
+
+Avoid multiple declarations such as:
+
+\begin{lstlisting}[language=C]
+char *first, second;
+\end{lstlisting}
+
+Prefer:
+
+\begin{lstlisting}[language=C]
+char *first;
+char *second;
+\end{lstlisting}
+
+Use one statement per line.
+
+\section{7. Functions}\label{7-functions}
+
+Function names shall describe the operation.
+
+Avoid:
+
+\begin{lstlisting}[language=C]
+do_it()
+proc()
+handle()
+x()
+\end{lstlisting}
+
+Prefer:
+
+\begin{lstlisting}[language=C]
+rx_canopen_send_sdo()
+rx_database_fetch_device()
+rx_wave_read_header()
+\end{lstlisting}
+
+Pass only information the function needs.
+
+Use \passthrough{\lstinline!const!} for input data that the function
+does not modify:
+
+\begin{lstlisting}[language=C]
+int
+rx_message_send(
+    const rx_connection_t *connection,
+    const void *data,
+    size_t data_size
+);
+\end{lstlisting}
+
+Output parameters shall have descriptive names and documented ownership.
+
+Example:
+
+\begin{lstlisting}[language=C]
+int
+rx_device_read_name(
+    const rx_device_t *device,
+    char **returned_name
+);
+\end{lstlisting}
+
+The documentation shall state whether
+\passthrough{\lstinline!returned\_name!} receives allocated memory and
+how it shall be freed.
+
+Return-value conventions shall be consistent and documented.
+
+\section{8. Integer and size types}\label{8-integer-and-size-types}
+
+Use \passthrough{\lstinline!size\_t!} for object sizes, allocation
+sizes, and collection lengths where appropriate.
+
+Use fixed-width integer types for protocol and binary-format fields:
+
+\begin{lstlisting}[language=C]
+uint8_t
+uint16_t
+uint32_t
+int32_t
+\end{lstlisting}
+
+Do not assume that \passthrough{\lstinline!int!} has a protocol-defined
+width.
+
+Avoid accidental signed/unsigned mixing and check narrowing conversions.
+
+\section{9. Memory ownership}\label{9-memory-ownership}
+
+This is a central part of the RX C style.
+
+For every dynamically allocated object it shall be clear:
+
+\begin{lstlisting}
+who allocates it
+who owns it
+when ownership changes
+who frees it
+how it is freed
+\end{lstlisting}
+
+Allocation shall be checked:
+
+\begin{lstlisting}[language=C]
+buffer = malloc(buffer_size);
+
+if (buffer == NULL)
+{
+    return -1;
+}
+\end{lstlisting}
+
+Do not cast \passthrough{\lstinline!malloc()!} in C:
+
+\begin{lstlisting}[language=C]
+buffer = malloc(buffer_size);
+\end{lstlisting}
+
+Prefer allocation based on the pointed-to object:
+
+\begin{lstlisting}[language=C]
+device = calloc(1, sizeof(*device));
+\end{lstlisting}
+
+rather than:
+
+\begin{lstlisting}[language=C]
+device = calloc(1, sizeof(rx_device_t));
+\end{lstlisting}
+
+Use zero initialization when zero is a valid initial state:
+
+\begin{lstlisting}[language=C]
+rx_device_t device = {0};
+\end{lstlisting}
+
+For large or untrusted counts, check that multiplication used to
+calculate an allocation size cannot overflow.
+
+\section{10. realloc}\label{10-realloc}
+
+Never overwrite the only pointer to allocated memory with
+\passthrough{\lstinline!realloc()!} before checking the result.
+
+Incorrect:
+
+\begin{lstlisting}[language=C]
+buffer = realloc(buffer, new_size);
+
+if (buffer == NULL)
+{
+    ...
+}
+\end{lstlisting}
+
+Correct:
+
+\begin{lstlisting}[language=C]
+void *new_buffer;
+
+new_buffer = realloc(buffer, new_size);
+
+if (new_buffer == NULL)
+{
+    ...
+}
+else
+{
+    buffer = new_buffer;
+}
+\end{lstlisting}
+
+\section{11. Matching acquire/release
+APIs}\label{11-matching-acquirerelease-apis}
+
+Use the matching release operation for each resource family.
+
+Typical pairs:
+
+\begin{lstlisting}
+malloc/calloc/realloc    -> free
+g_malloc/g_new/g_strdup  -> g_free
+fopen                    -> fclose
+open                     -> close
+opendir                  -> closedir
+PQexec                   -> PQclear
+PQconnectdb              -> PQfinish
+GObject reference        -> g_object_unref
+\end{lstlisting}
+
+Do not mix unrelated allocation/release APIs.
+
+When a pointer variable remains in scope and may otherwise be reused,
+setting it to \passthrough{\lstinline!NULL!} after release can improve
+safety:
+
+\begin{lstlisting}[language=C]
+free(buffer);
+buffer = NULL;
+\end{lstlisting}
+
+This does not make other dangling aliases safe; ownership must still be
+designed correctly.
+
+\section{12. Cleanup and error paths}\label{12-cleanup-and-error-paths}
+
+Cleanup belongs in the design.
+
+A function that can fail after acquiring several resources shall have a
+clear cleanup strategy.
+
+A local \passthrough{\lstinline!goto cleanup!} is acceptable in C when
+it makes ownership and error handling clearer.
+
+Example:
+
+\begin{lstlisting}[language=C]
+int
+rx_file_process(const char *filename)
+{
+    int result;
+    FILE *input_file;
+    char *buffer;
+
+    result = -1;
+    input_file = NULL;
+    buffer = NULL;
+
+    input_file = fopen(filename, "rb");
+
+    if (input_file == NULL)
+    {
+        goto cleanup;
+    }
+
+    buffer = malloc(4096);
+
+    if (buffer == NULL)
+    {
+        goto cleanup;
+    }
+
+    /*
+     * Processing...
+     */
+
+    result = 0;
+
+cleanup:
+
+    free(buffer);
+
+    if (input_file != NULL)
+    {
+        fclose(input_file);
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+Resources should normally be released in reverse acquisition order.
+
+An error return shall not leak resources acquired earlier in the
+function.
+
+\section{13. Pointer rules}\label{13-pointer-rules}
+
+Pointers returned by fallible operations shall be checked before
+dereference.
+
+Borrowed pointers shall be documented:
+
+\begin{lstlisting}[language=C]
+/*
+ * Returns a borrowed pointer owned by `device`.
+ * The caller shall not free it.
+ */
+const char *
+rx_device_get_name(const rx_device_t *device);
+\end{lstlisting}
+
+Ownership transfer shall be explicit in API documentation.
+
+Use pointer arithmetic only when it clearly improves the implementation
+and bounds are obvious.
+
+\section{14. Strings and buffers}\label{14-strings-and-buffers}
+
+A function that writes into caller-provided storage shall receive the
+buffer size:
+
+\begin{lstlisting}[language=C]
+int
+rx_device_format_name(
+    const rx_device_t *device,
+    char *buffer,
+    size_t buffer_size
+);
+\end{lstlisting}
+
+Avoid unbounded string functions such as:
+
+\begin{lstlisting}[language=C]
+strcpy()
+strcat()
+sprintf()
+gets()
+\end{lstlisting}
+
+Prefer size-aware functions such as \passthrough{\lstinline!snprintf()!}
+or suitable GLib helpers when GLib is already a dependency.
+
+Do not assume a byte buffer is a C string unless null termination is
+guaranteed.
+
+Protocol frames and network data are byte arrays unless the protocol
+says otherwise.
+
+\section{15. Structures}\label{15-structures}
+
+Initialize structures deliberately.
+
+Designated initializers are encouraged when they improve clarity:
+
+\begin{lstlisting}[language=C]
+rx_message_t message = {
+    .type = RX_MESSAGE_STATUS,
+    .node_id = node_id,
+    .value = value
+};
+\end{lstlisting}
+
+Private structure definitions should remain in the
+\passthrough{\lstinline!.c!} file when callers do not need the layout.
+
+Opaque object-style interfaces are encouraged for substantial modules:
+
+\begin{lstlisting}[language=C]
+typedef struct rx_canopen_client rx_canopen_client_t;
+\end{lstlisting}
+
+\section{16. Object-like C APIs}\label{16-object-like-c-apis}
+
+C is not object-oriented in the PHP sense, but a module may have an
+explicit object lifecycle:
+
+\begin{lstlisting}[language=C]
+rx_canopen_client_t *
+rx_canopen_client_new(void);
+
+int
+rx_canopen_client_open(
+    rx_canopen_client_t *client,
+    const char *interface_name
+);
+
+void
+rx_canopen_client_close(
+    rx_canopen_client_t *client
+);
+
+void
+rx_canopen_client_free(
+    rx_canopen_client_t *client
+);
+\end{lstlisting}
+
+The lifecycle should be obvious:
+
+\begin{lstlisting}
+new
+open
+use
+close
+free
+\end{lstlisting}
+
+Do not emulate C++ with complicated inheritance-like macro systems.
+
+\section{17. GLib and GObject}\label{17-glib-and-gobject}
+
+When a module uses GLib, follow GLib ownership conventions consistently.
+
+Typical tools include:
+
+\begin{lstlisting}
+g_new0()
+g_strdup()
+g_free()
+GPtrArray
+GHashTable
+GError
+g_object_unref()
+\end{lstlisting}
+
+Do not cross allocator families without a documented reason.
+
+Automatic cleanup helpers such as \passthrough{\lstinline!g\_autoptr!}
+may be used when supported by the project toolchain and when they make
+lifetime easier to understand.
+
+\section{18. Other resources}\label{18-other-resources}
+
+Memory is only one kind of resource.
+
+The same ownership discipline applies to:
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!FILE *!};
+\item
+  POSIX file descriptors;
+\item
+  sockets;
+\item
+  \passthrough{\lstinline!DIR *!};
+\item
+  PostgreSQL \passthrough{\lstinline!PGconn *!};
+\item
+  PostgreSQL \passthrough{\lstinline!PGresult *!};
+\item
+  GLib/GObject references;
+\item
+  parser objects;
+\item
+  mutexes;
+\item
+  threads;
+\item
+  dynamically loaded handles.
+\end{itemize}
+
+Every successful acquisition path shall have a matching release path.
+
+\section{19. Error handling}\label{19-error-handling}
+
+Do not ignore return values from operations that can fail when success
+is required.
+
+For system calls that use \passthrough{\lstinline!errno!}, preserve or
+report it before another call can overwrite it.
+
+Logs should include enough context to identify the failed operation and
+object, but shall not expose passwords or secret material.
+
+\section{20. Macros}\label{20-macros}
+
+Prefer functions to function-like macros when a function is sufficient.
+
+Macros are appropriate for compile-time constants, conditional
+compilation, and carefully designed low-level helpers.
+
+Macros shall not hide significant control flow or resource ownership.
+
+\section{21. Global state}\label{21-global-state}
+
+Avoid writable global variables.
+
+Prefer explicit module state or object-like context structures passed to
+functions.
+
+If global state is unavoidable, document its initialization, lifetime,
+and thread-safety.
+
+\section{22. Concurrency}\label{22-concurrency}
+
+Shared mutable state shall have an explicit synchronization policy.
+
+Document:
+
+\begin{itemize}
+\tightlist
+\item
+  which mutex protects which state;
+\item
+  lock ordering;
+\item
+  ownership of mutexes;
+\item
+  whether callbacks may run while locks are held.
+\end{itemize}
+
+Do not hold locks across slow I/O unless necessary and documented.
+
+\section{23. Networking and binary
+protocols}\label{23-networking-and-binary-protocols}
+
+Use fixed-width integer types for protocol fields.
+
+Do not rely on host byte order.
+
+Validate received lengths before reading fields.
+
+Never trust a network-provided count or length before checking it
+against the actual received buffer and project limits.
+
+\section{24. Database C code}\label{24-database-c-code}
+
+For libpq:
+
+\begin{itemize}
+\tightlist
+\item
+  check \passthrough{\lstinline!PQstatus()!} after connecting;
+\item
+  check \passthrough{\lstinline!PQresultStatus()!} after commands;
+\item
+  call \passthrough{\lstinline!PQclear()!} for every owned
+  \passthrough{\lstinline!PGresult *!};
+\item
+  call \passthrough{\lstinline!PQfinish()!} for every owned
+  \passthrough{\lstinline!PGconn *!};
+\item
+  use parameterized queries for data values;
+\item
+  keep connection ownership clear.
+\end{itemize}
+
+A cleanup section is often appropriate for functions owning several
+libpq resources.
+
+\section{25. Compiler warnings}\label{25-compiler-warnings}
+
+Warnings shall be enabled and treated seriously.
+
+A useful baseline is:
+
+\begin{lstlisting}[language=make]
+CFLAGS += -Wall -Wextra -Wformat=2
+\end{lstlisting}
+
+Projects should add stricter warnings where practical.
+
+Warnings shall not be disabled merely to get a quiet build without
+understanding their cause.
+
+A warning-free normal build is the target.
+
+\section{26. Runtime checking}\label{26-runtime-checking}
+
+Memory-sensitive code should be tested with tools such as:
+
+\begin{lstlisting}
+AddressSanitizer
+UndefinedBehaviorSanitizer
+Valgrind
+\end{lstlisting}
+
+Example development flags:
+
+\begin{lstlisting}[language=make]
+CFLAGS += -fsanitize=address,undefined
+LDFLAGS += -fsanitize=address,undefined
+\end{lstlisting}
+
+These need not be production flags, but allocation, buffer, parser, and
+ownership code should be tested with such tools when practical.
+
+\section{27. Comments and public API
+documentation}\label{27-comments-and-public-api-documentation}
+
+Comments should explain why, ownership, protocol requirements, hardware
+constraints, or non-obvious lifetime assumptions.
+
+For public functions, ownership documentation is part of the API.
+
+Comments shoule be done with // and not /* ... */.
+
+
+Example:
+
+\begin{lstlisting}[language=C]
+//----------------------------------------------------------------------
+// rx_device_name_copy:
+//
+// Returns a newly allocated copy of the device name.
+//
+//  Ownership:
+//  The caller owns the returned string and shall release it with free().
+//
+// Returns:
+//   Newly allocated string on success, NULL on failure.
+//----------------------------------------------------------------------
+char *
+rx_device_name_copy(const rx_device_t *device);
+\end{lstlisting}
+
+\section{28. Example}\label{28-example}
+
+\begin{lstlisting}[language=C]
+#include "rx-message.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+rx_message_t *
+rx_message_new(
+    const void *data,
+    size_t data_size
+)
+{
+    rx_message_t *message;
+
+    message = calloc(1, sizeof(*message));
+
+    if (message == NULL)
+    {
+        return NULL;
+    }
+
+    if (data_size > 0)
+    {
+        message->data = malloc(data_size);
+
+        if (message->data == NULL)
+        {
+            free(message);
+            return NULL;
+        }
+
+        memcpy(
+            message->data,
+            data,
+            data_size
+        );
+
+        message->data_size = data_size;
+    }
+
+    return message;
+}
+
+void
+rx_message_free(rx_message_t *message)
+{
+    if (message == NULL)
+    {
+        return;
+    }
+
+    free(message->data);
+    free(message);
+}
+\end{lstlisting}
+
+Singel line comment is like
+
+\begin{lstlisting}[language=C]
+free(message->data); // Free memory
+\end{lstlisting}
+
+
+And for start of lager block there should be 70 hypens like
+
+\begin{lstlisting}[language=C]
+//----------------------------------------------------------------------
+//  Comment
+//----------------------------------------------------------------------
+\end{lstlisting}
+  
+
+
+\section{29. Review checklist}\label{29-review-checklist}
+
+Before committing C code, check:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Files and modules are named consistently.
+\item
+  Identifiers are lowercase with underscores.
+\item
+  Public symbols carry an appropriate prefix.
+\item
+  Names are descriptive and single-letter abbreviations are avoided.
+\item
+  Braces and four-space indentation are consistent.
+\item
+  Every pointer lifetime is understandable.
+\item
+  Every allocation has a matching release.
+\item
+  All failure paths are leak-free.
+\item
+  \passthrough{\lstinline!realloc()!} is used safely.
+\item
+  Buffer lengths are explicit.
+\item
+  Unsafe string functions are avoided.
+\item
+  Protocol lengths and integer widths are validated.
+\item
+  Return values are checked.
+\item
+  All acquired resources are released in every path.
+\item
+  Public ownership rules are documented.
+\item
+  The normal build has no unexplained warnings.
+\item
+  Memory-sensitive code has been checked with sanitizers or Valgrind
+  when practical.
+\item
+  The implementation is simpler than a more abstract alternative.
+\end{enumerate}
+
+\section{30. Core rule}\label{30-core-rule}
+
+\begin{quote}
+Ownership, lifetime, bounds, and cleanup shall be visible in the code.
+\end{quote}
+
+C code is not complete merely because the successful path works. The
+cleanup and failure paths are part of the implementation.
+
+
+\end{document}
